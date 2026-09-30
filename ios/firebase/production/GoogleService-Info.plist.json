@@ -1,0 +1,12 @@
+{
+  "client": {
+    "provider": "placeholder",
+    "mobilesdk_app_id": "1:123456789:ios:prod_placeholder",
+    "firebase_url": "https://sampleapp-prod.firebaseio.com",
+    "storage_bucket": "sampleapp-prod.appspot.com",
+    "api_key": "YOUR_PROD_IOS_API_KEY",
+    "client_id": "123456789-prod.apps.googleusercontent.com",
+    "project_id": "sampleapp-prod",
+    "bundle_id": "com.sampleapp"
+  }
+}

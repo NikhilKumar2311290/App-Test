@@ -1,0 +1,4 @@
+app_identifier(ENV["APP_IDENTIFIER"] || "com.sampleapp")
+apple_id(ENV["APPLE_ID"] || "your-apple-id@example.com")
+itc_team_id(ENV["ITC_TEAM_ID"] || "your_itc_team_id")
+team_id(ENV["TEAM_ID"] || "your_team_id")

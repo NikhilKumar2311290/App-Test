@@ -1,0 +1,12 @@
+{
+  "client": {
+    "provider": "placeholder",
+    "mobilesdk_app_id": "1:123456789:ios:uat_placeholder",
+    "firebase_url": "https://sampleapp-uat.firebaseio.com",
+    "storage_bucket": "sampleapp-uat.appspot.com",
+    "api_key": "YOUR_UAT_IOS_API_KEY",
+    "client_id": "123456789-uat.apps.googleusercontent.com",
+    "project_id": "sampleapp-uat",
+    "bundle_id": "com.sampleapp.uat"
+  }
+}

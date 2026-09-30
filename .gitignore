@@ -73,3 +73,21 @@ yarn-error.log
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# Environment files (contain Firebase IDs and sensitive config)
+.env
+.env.*
+!.env.example
+
+# Release keystore (must not be committed)
+*.keystore
+!debug.keystore
+release.keystore
+
+# Fastlane build output
+output/
+*.ipa
+*.apk
+
+# Gemfile lock (optional - can be committed for reproducibility)
+# Gemfile.lock

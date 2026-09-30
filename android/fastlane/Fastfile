@@ -1,0 +1,76 @@
+default_platform(:android)
+
+platform :android do
+
+  # ─────────────────────────────────────────────────
+  # Dev Distribution
+  # ─────────────────────────────────────────────────
+  desc "Build and distribute DEV build to Firebase App Distribution"
+  lane :distribute_dev do
+    gradle(
+      task: "assemble",
+      flavor: "dev",
+      build_type: "Release",
+      project_dir: ".",
+      properties: {
+        "ENVFILE" => "../.env.dev"
+      }
+    )
+
+    firebase_app_distribution(
+      app: ENV["FIREBASE_APP_ID_ANDROID"] || "1:123456789:android:dev_placeholder",
+      groups: "dev-testers",
+      release_notes: "DEV build - #{Time.now.strftime('%Y-%m-%d %H:%M')} - Branch: #{ENV['CIRCLE_BRANCH']}",
+      firebase_cli_token: ENV["FIREBASE_TOKEN"],
+      apk_path: "app/build/outputs/apk/dev/release/app-dev-release.apk"
+    )
+  end
+
+  # ─────────────────────────────────────────────────
+  # UAT Distribution
+  # ─────────────────────────────────────────────────
+  desc "Build and distribute UAT build to Firebase App Distribution"
+  lane :distribute_uat do
+    gradle(
+      task: "assemble",
+      flavor: "uat",
+      build_type: "Release",
+      project_dir: ".",
+      properties: {
+        "ENVFILE" => "../.env.uat"
+      }
+    )
+
+    firebase_app_distribution(
+      app: ENV["FIREBASE_APP_ID_ANDROID"] || "1:123456789:android:uat_placeholder",
+      groups: "uat-testers",
+      release_notes: "UAT build - #{Time.now.strftime('%Y-%m-%d %H:%M')} - Branch: #{ENV['CIRCLE_BRANCH']}",
+      firebase_cli_token: ENV["FIREBASE_TOKEN"],
+      apk_path: "app/build/outputs/apk/uat/release/app-uat-release.apk"
+    )
+  end
+
+  # ─────────────────────────────────────────────────
+  # Production Distribution
+  # ─────────────────────────────────────────────────
+  desc "Build and distribute PRODUCTION build to Firebase App Distribution"
+  lane :distribute_production do
+    gradle(
+      task: "assemble",
+      flavor: "production",
+      build_type: "Release",
+      project_dir: ".",
+      properties: {
+        "ENVFILE" => "../.env.production"
+      }
+    )
+
+    firebase_app_distribution(
+      app: ENV["FIREBASE_APP_ID_ANDROID"] || "1:123456789:android:prod_placeholder",
+      groups: "production-testers",
+      release_notes: "PRODUCTION build - #{Time.now.strftime('%Y-%m-%d %H:%M')} - Branch: #{ENV['CIRCLE_BRANCH']}",
+      firebase_cli_token: ENV["FIREBASE_TOKEN"],
+      apk_path: "app/build/outputs/apk/production/release/app-production-release.apk"
+    )
+  end
+end

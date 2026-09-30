@@ -1,0 +1,112 @@
+default_platform(:ios)
+
+platform :ios do
+  before_all do
+    setup_circle_ci if ENV["CIRCLECI"]
+  end
+
+  # ─────────────────────────────────────────────────
+  # Code Signing Setup (using match)
+  # ─────────────────────────────────────────────────
+  desc "Sync code signing certificates"
+  private_lane :sync_code_signing do |options|
+    match(
+      type: options[:type] || "adhoc",
+      app_identifier: options[:app_identifier],
+      git_url: ENV["MATCH_GIT_URL"] || "git@bitbucket.org:your-team/certificates.git",
+      readonly: true,
+      force_for_new_devices: true
+    )
+  end
+
+  # ─────────────────────────────────────────────────
+  # Build IPA
+  # ─────────────────────────────────────────────────
+  private_lane :build_ipa do |options|
+    gym(
+      workspace: "SampleApp.xcworkspace",
+      scheme: options[:scheme],
+      configuration: options[:configuration] || "Release",
+      export_method: "ad-hoc",
+      output_directory: "output",
+      output_name: "SampleApp-#{options[:env_name]}.ipa",
+      clean: true,
+      include_bitcode: false
+    )
+  end
+
+  # ─────────────────────────────────────────────────
+  # Dev Distribution
+  # ─────────────────────────────────────────────────
+  desc "Build and distribute DEV build to Firebase App Distribution"
+  lane :distribute_dev do
+    sync_code_signing(
+      app_identifier: "com.sampleapp.dev",
+      type: "adhoc"
+    )
+
+    build_ipa(
+      scheme: "SampleApp-Dev",
+      env_name: "dev",
+      configuration: "Release-Dev"
+    )
+
+    firebase_app_distribution(
+      app: ENV["FIREBASE_APP_ID_IOS"] || "1:123456789:ios:dev_placeholder",
+      groups: "dev-testers",
+      release_notes: "DEV build - #{Time.now.strftime('%Y-%m-%d %H:%M')} - Branch: #{ENV['CIRCLE_BRANCH']}",
+      firebase_cli_token: ENV["FIREBASE_TOKEN"],
+      ipa_path: "output/SampleApp-dev.ipa"
+    )
+  end
+
+  # ─────────────────────────────────────────────────
+  # UAT Distribution
+  # ─────────────────────────────────────────────────
+  desc "Build and distribute UAT build to Firebase App Distribution"
+  lane :distribute_uat do
+    sync_code_signing(
+      app_identifier: "com.sampleapp.uat",
+      type: "adhoc"
+    )
+
+    build_ipa(
+      scheme: "SampleApp-UAT",
+      env_name: "uat",
+      configuration: "Release-UAT"
+    )
+
+    firebase_app_distribution(
+      app: ENV["FIREBASE_APP_ID_IOS"] || "1:123456789:ios:uat_placeholder",
+      groups: "uat-testers",
+      release_notes: "UAT build - #{Time.now.strftime('%Y-%m-%d %H:%M')} - Branch: #{ENV['CIRCLE_BRANCH']}",
+      firebase_cli_token: ENV["FIREBASE_TOKEN"],
+      ipa_path: "output/SampleApp-uat.ipa"
+    )
+  end
+
+  # ─────────────────────────────────────────────────
+  # Production Distribution
+  # ─────────────────────────────────────────────────
+  desc "Build and distribute PRODUCTION build to Firebase App Distribution"
+  lane :distribute_production do
+    sync_code_signing(
+      app_identifier: "com.sampleapp",
+      type: "adhoc"
+    )
+
+    build_ipa(
+      scheme: "SampleApp-Production",
+      env_name: "production",
+      configuration: "Release-Production"
+    )
+
+    firebase_app_distribution(
+      app: ENV["FIREBASE_APP_ID_IOS"] || "1:123456789:ios:prod_placeholder",
+      groups: "production-testers",
+      release_notes: "PRODUCTION build - #{Time.now.strftime('%Y-%m-%d %H:%M')} - Branch: #{ENV['CIRCLE_BRANCH']}",
+      firebase_cli_token: ENV["FIREBASE_TOKEN"],
+      ipa_path: "output/SampleApp-production.ipa"
+    )
+  end
+end

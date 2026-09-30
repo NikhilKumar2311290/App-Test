@@ -2,6 +2,14 @@ apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 
+// react-native-config - reads .env files per flavor
+project.ext.envConfigFiles = [
+    dev: ".env.dev",
+    uat: ".env.uat",
+    production: ".env.production",
+]
+apply from: project(':react-native-config').projectDir.getPath() + "/dotenv.gradle"
+
 /**
  * This is the configuration block to customize your React Native Android app.
  * By default you don't need to apply any configuration, just uncomment the lines you need.
@@ -21,7 +29,7 @@ react {
     //   The list of variants to that are debuggable. For those we're going to
     //   skip the bundling of the JS bundle and the assets. Default is "debug", "debugOptimized".
     //   If you add flavors like lite, prod, etc. you'll have to list your debuggableVariants.
-    // debuggableVariants = ["liteDebug", "liteDebugOptimized", "prodDebug", "prodDebugOptimized"]
+    debuggableVariants = ["devDebug", "devDebugOptimized", "uatDebug", "uatDebugOptimized", "productionDebug", "productionDebugOptimized"]
 
     /* Bundling */
     //   A list containing the node command and its flags. Default is just 'node'.
@@ -85,6 +93,31 @@ android {
         versionCode 1
         versionName "1.0"
     }
+
+    // ── Product Flavors for 3 environments ──────────────
+    flavorDimensions "environment"
+    productFlavors {
+        dev {
+            dimension "environment"
+            applicationIdSuffix ".dev"
+            versionNameSuffix "-dev"
+            resValue "string", "app_name", "SampleApp Dev"
+            buildConfigField "String", "ENV_NAME", '"dev"'
+        }
+        uat {
+            dimension "environment"
+            applicationIdSuffix ".uat"
+            versionNameSuffix "-uat"
+            resValue "string", "app_name", "SampleApp UAT"
+            buildConfigField "String", "ENV_NAME", '"uat"'
+        }
+        production {
+            dimension "environment"
+            resValue "string", "app_name", "SampleApp"
+            buildConfigField "String", "ENV_NAME", '"production"'
+        }
+    }
+
     signingConfigs {
         debug {
             storeFile file('debug.keystore')
@@ -92,15 +125,20 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        release {
+            // Configure these via environment variables in CI
+            storeFile file(System.getenv("ANDROID_KEYSTORE_PATH") ?: "debug.keystore")
+            storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD") ?: "android"
+            keyAlias System.getenv("ANDROID_KEY_ALIAS") ?: "androiddebugkey"
+            keyPassword System.getenv("ANDROID_KEY_PASSWORD") ?: "android"
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            signingConfig signingConfigs.release
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
         }
@@ -117,3 +155,9 @@ dependencies {
         implementation jscFlavor
     }
 }
+
+// Apply Firebase App Distribution plugin (used by Fastlane)
+apply plugin: "com.google.firebase.appdistribution"
+
+// Apply Google Services plugin (processes google-services.json)
+apply plugin: "com.google.gms.google-services"
