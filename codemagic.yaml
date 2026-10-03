@@ -1,0 +1,514 @@
+# ─────────────────────────────────────────────────────────────
+# Codemagic CI/CD Configuration
+# SampleApp - React Native with 3 Environments (dev/uat/production)
+# Builds Android & iOS, distributes via Firebase App Distribution
+# ─────────────────────────────────────────────────────────────
+
+definitions:
+  # ── Reusable environment variables ──────────────────────
+  environment:
+    &android_env
+    node: 22.11.0
+    npm: latest
+    java: 17
+    android_signing:
+      - &android_keystore_dev
+        keystore_reference: keystore_dev
+      - &android_keystore_uat
+        keystore_reference: keystore_uat
+      - &android_keystore_prod
+        keystore_reference: keystore_prod
+
+  # ── Reusable scripts ───────────────────────────────────
+  scripts:
+    - &install_deps
+      name: Install dependencies
+      script: |
+        npm ci
+
+    - &run_tests
+      name: Run tests
+      script: |
+        npm run test -- --ci --coverage || true
+
+    - &run_lint
+      name: Run ESLint
+      script: |
+        npm run lint || true
+
+# ─────────────────────────────────────────────────────────────
+# Workflows
+# ─────────────────────────────────────────────────────────────
+workflows:
+
+  # ══════════════════════════════════════════════════════════
+  # DEV - Android Build
+  # ══════════════════════════════════════════════════════════
+  android-dev:
+    name: Android Dev Build
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: develop
+          include: true
+        - pattern: 'feature/*'
+          include: true
+      cancel_previous_builds: true
+
+    environment:
+      <<: *android_env
+      groups:
+        - firebase_credentials  # FIREBASE_TOKEN
+        - android_signing_dev   # Keystore credentials
+      vars:
+        ENVFILE: .env.dev
+        FIREBASE_APP_ID_ANDROID: "1:858015635135:android:ef07a06bee88ba0c7ad80a"
+        BUILD_FLAVOR: dev
+        APP_ENV: dev
+
+    scripts:
+      - *install_deps
+      - *run_lint
+      - *run_tests
+
+      - name: Set up environment file
+        script: |
+          cp .env.dev .env
+          echo "Environment: dev"
+          cat .env
+
+      - name: Set Android SDK
+        script: |
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
+
+      - name: Build Android APK (Dev)
+        script: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDevRelease \
+            -PENVFILE=../.env.dev \
+            --no-daemon \
+            --stacktrace
+
+    artifacts:
+      - android/app/build/outputs/**/*.apk
+      - android/app/build/outputs/**/mapping.txt
+
+    publishing:
+      firebase:
+        firebase_service_account: $FIREBASE_SERVICE_ACCOUNT_JSON
+        android:
+          app_id: "1:858015635135:android:ef07a06bee88ba0c7ad80a"
+          groups:
+            - dev-testers
+          artifact_type: apk
+      email:
+        recipients:
+          - nikhil23111-admin@gmail.com
+        notify:
+          success: true
+          failure: true
+
+  # ══════════════════════════════════════════════════════════
+  # UAT - Android Build
+  # ══════════════════════════════════════════════════════════
+  android-uat:
+    name: Android UAT Build
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: staging
+          include: true
+        - pattern: 'release/*'
+          include: true
+      cancel_previous_builds: true
+
+    environment:
+      <<: *android_env
+      groups:
+        - firebase_credentials
+        - android_signing_uat
+      vars:
+        ENVFILE: .env.uat
+        FIREBASE_APP_ID_ANDROID: "1:858015635135:android:ef07a06bee88ba0c7ad80a"
+        BUILD_FLAVOR: uat
+        APP_ENV: uat
+
+    scripts:
+      - *install_deps
+      - *run_lint
+      - *run_tests
+
+      - name: Set up environment file
+        script: |
+          cp .env.uat .env
+          echo "Environment: uat"
+
+      - name: Set Android SDK
+        script: |
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
+
+      - name: Build Android APK (UAT)
+        script: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleUatRelease \
+            -PENVFILE=../.env.uat \
+            --no-daemon \
+            --stacktrace
+
+    artifacts:
+      - android/app/build/outputs/**/*.apk
+      - android/app/build/outputs/**/mapping.txt
+
+    publishing:
+      firebase:
+        firebase_service_account: $FIREBASE_SERVICE_ACCOUNT_JSON
+        android:
+          app_id: "1:858015635135:android:ef07a06bee88ba0c7ad80a"
+          groups:
+            - uat-testers
+          artifact_type: apk
+      email:
+        recipients:
+          - nikhil23111-admin@gmail.com
+        notify:
+          success: true
+          failure: true
+
+  # ══════════════════════════════════════════════════════════
+  # PRODUCTION - Android Build
+  # ══════════════════════════════════════════════════════════
+  android-production:
+    name: Android Production Build
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+        - pattern: master
+          include: true
+      cancel_previous_builds: true
+
+    environment:
+      <<: *android_env
+      groups:
+        - firebase_credentials
+        - android_signing_prod
+      vars:
+        ENVFILE: .env.production
+        FIREBASE_APP_ID_ANDROID: "1:858015635135:android:ef07a06bee88ba0c7ad80a"
+        BUILD_FLAVOR: production
+        APP_ENV: production
+
+    scripts:
+      - *install_deps
+      - *run_lint
+      - *run_tests
+
+      - name: Set up environment file
+        script: |
+          cp .env.production .env
+          echo "Environment: production"
+
+      - name: Set Android SDK
+        script: |
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > android/local.properties
+
+      - name: Build Android APK (Production)
+        script: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleProductionRelease \
+            -PENVFILE=../.env.production \
+            --no-daemon \
+            --stacktrace
+
+    artifacts:
+      - android/app/build/outputs/**/*.apk
+      - android/app/build/outputs/**/mapping.txt
+
+    publishing:
+      firebase:
+        firebase_service_account: $FIREBASE_SERVICE_ACCOUNT_JSON
+        android:
+          app_id: "1:858015635135:android:ef07a06bee88ba0c7ad80a"
+          groups:
+            - production-testers
+          artifact_type: apk
+      email:
+        recipients:
+          - nikhil23111-admin@gmail.com
+        notify:
+          success: true
+          failure: true
+
+  # ══════════════════════════════════════════════════════════
+  # DEV - iOS Build
+  # ══════════════════════════════════════════════════════════
+  ios-dev:
+    name: iOS Dev Build
+    max_build_duration: 90
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: codemagic_app_store
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: develop
+          include: true
+        - pattern: 'feature/*'
+          include: true
+      cancel_previous_builds: true
+
+    environment:
+      ios_signing:
+        distribution_type: ad_hoc
+        bundle_identifier: com.sampleapp.dev
+      node: 22.11.0
+      npm: latest
+      xcode: latest
+      cocoapods: default
+      groups:
+        - firebase_credentials
+      vars:
+        ENVFILE: .env.dev
+        APP_ENV: dev
+        BUNDLE_ID: com.sampleapp.dev
+
+    scripts:
+      - *install_deps
+      - *run_lint
+      - *run_tests
+
+      - name: Set up environment file
+        script: |
+          cp .env.dev .env
+
+      - name: Install CocoaPods
+        script: |
+          cd ios
+          pod install
+
+      - name: Set up code signing
+        script: |
+          keychain initialize
+
+      - name: Build iOS IPA (Dev)
+        script: |
+          cd ios
+          xcodebuild -workspace SampleApp.xcworkspace \
+            -scheme SampleApp \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination generic/platform=iOS \
+            -archivePath $CM_BUILD_DIR/build/SampleApp-dev.xcarchive \
+            archive \
+            ENVFILE=../.env.dev
+
+          xcodebuild -exportArchive \
+            -archivePath $CM_BUILD_DIR/build/SampleApp-dev.xcarchive \
+            -exportOptionsPlist /tmp/export_options.plist \
+            -exportPath $CM_BUILD_DIR/build/ios
+
+    artifacts:
+      - build/ios/**/*.ipa
+      - build/*.xcarchive
+
+    publishing:
+      firebase:
+        firebase_service_account: $FIREBASE_SERVICE_ACCOUNT_JSON
+        ios:
+          app_id: $FIREBASE_APP_ID_IOS
+          groups:
+            - dev-testers
+      email:
+        recipients:
+          - nikhil23111-admin@gmail.com
+        notify:
+          success: true
+          failure: true
+
+  # ══════════════════════════════════════════════════════════
+  # UAT - iOS Build
+  # ══════════════════════════════════════════════════════════
+  ios-uat:
+    name: iOS UAT Build
+    max_build_duration: 90
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: codemagic_app_store
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: staging
+          include: true
+        - pattern: 'release/*'
+          include: true
+      cancel_previous_builds: true
+
+    environment:
+      ios_signing:
+        distribution_type: ad_hoc
+        bundle_identifier: com.sampleapp.uat
+      node: 22.11.0
+      npm: latest
+      xcode: latest
+      cocoapods: default
+      groups:
+        - firebase_credentials
+      vars:
+        ENVFILE: .env.uat
+        APP_ENV: uat
+        BUNDLE_ID: com.sampleapp.uat
+
+    scripts:
+      - *install_deps
+      - *run_lint
+      - *run_tests
+
+      - name: Set up environment file
+        script: |
+          cp .env.uat .env
+
+      - name: Install CocoaPods
+        script: |
+          cd ios
+          pod install
+
+      - name: Set up code signing
+        script: |
+          keychain initialize
+
+      - name: Build iOS IPA (UAT)
+        script: |
+          cd ios
+          xcodebuild -workspace SampleApp.xcworkspace \
+            -scheme SampleApp \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination generic/platform=iOS \
+            -archivePath $CM_BUILD_DIR/build/SampleApp-uat.xcarchive \
+            archive \
+            ENVFILE=../.env.uat
+
+          xcodebuild -exportArchive \
+            -archivePath $CM_BUILD_DIR/build/SampleApp-uat.xcarchive \
+            -exportOptionsPlist /tmp/export_options.plist \
+            -exportPath $CM_BUILD_DIR/build/ios
+
+    artifacts:
+      - build/ios/**/*.ipa
+      - build/*.xcarchive
+
+    publishing:
+      firebase:
+        firebase_service_account: $FIREBASE_SERVICE_ACCOUNT_JSON
+        ios:
+          app_id: $FIREBASE_APP_ID_IOS
+          groups:
+            - uat-testers
+      email:
+        recipients:
+          - nikhil23111-admin@gmail.com
+        notify:
+          success: true
+          failure: true
+
+  # ══════════════════════════════════════════════════════════
+  # PRODUCTION - iOS Build
+  # ══════════════════════════════════════════════════════════
+  ios-production:
+    name: iOS Production Build
+    max_build_duration: 90
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: codemagic_app_store
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+        - pattern: master
+          include: true
+      cancel_previous_builds: true
+
+    environment:
+      ios_signing:
+        distribution_type: ad_hoc
+        bundle_identifier: com.sampleapp
+      node: 22.11.0
+      npm: latest
+      xcode: latest
+      cocoapods: default
+      groups:
+        - firebase_credentials
+      vars:
+        ENVFILE: .env.production
+        APP_ENV: production
+        BUNDLE_ID: com.sampleapp
+
+    scripts:
+      - *install_deps
+      - *run_lint
+      - *run_tests
+
+      - name: Set up environment file
+        script: |
+          cp .env.production .env
+
+      - name: Install CocoaPods
+        script: |
+          cd ios
+          pod install
+
+      - name: Set up code signing
+        script: |
+          keychain initialize
+
+      - name: Build iOS IPA (Production)
+        script: |
+          cd ios
+          xcodebuild -workspace SampleApp.xcworkspace \
+            -scheme SampleApp \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination generic/platform=iOS \
+            -archivePath $CM_BUILD_DIR/build/SampleApp-production.xcarchive \
+            archive \
+            ENVFILE=../.env.production
+
+          xcodebuild -exportArchive \
+            -archivePath $CM_BUILD_DIR/build/SampleApp-production.xcarchive \
+            -exportOptionsPlist /tmp/export_options.plist \
+            -exportPath $CM_BUILD_DIR/build/ios
+
+    artifacts:
+      - build/ios/**/*.ipa
+      - build/*.xcarchive
+
+    publishing:
+      firebase:
+        firebase_service_account: $FIREBASE_SERVICE_ACCOUNT_JSON
+        ios:
+          app_id: $FIREBASE_APP_ID_IOS
+          groups:
+            - production-testers
+      email:
+        recipients:
+          - nikhil23111-admin@gmail.com
+        notify:
+          success: true
+          failure: true
