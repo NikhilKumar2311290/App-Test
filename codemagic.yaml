@@ -9,7 +9,6 @@ definitions:
   environment:
     &android_env
     node: 22.11.0
-    npm: latest
     java: 17
 
   # ── Reusable scripts ───────────────────────────────────
@@ -269,7 +268,7 @@ workflows:
         distribution_type: ad_hoc
         bundle_identifier: com.sampleapp.dev
       node: 22.11.0
-      npm: latest
+
       xcode: latest
       cocoapods: default
       groups:
@@ -356,7 +355,7 @@ workflows:
         distribution_type: ad_hoc
         bundle_identifier: com.sampleapp.uat
       node: 22.11.0
-      npm: latest
+
       xcode: latest
       cocoapods: default
       groups:
@@ -443,7 +442,7 @@ workflows:
         distribution_type: ad_hoc
         bundle_identifier: com.sampleapp
       node: 22.11.0
-      npm: latest
+
       xcode: latest
       cocoapods: default
       groups:
