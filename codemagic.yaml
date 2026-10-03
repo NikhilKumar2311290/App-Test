@@ -68,9 +68,9 @@ workflows:
 
       - name: Set up environment file
         script: |
-          echo  | base64 --decode > .env
+          echo `$ENV_DEV_BASE64 | base64 --decode > .env.dev
           echo "Environment: dev"
-          cat .env
+          cat .env.dev
 
       - name: Set Android SDK
         script: |
@@ -139,7 +139,7 @@ workflows:
 
       - name: Set up environment file
         script: |
-          echo  | base64 --decode > .env
+          echo `$ENV_UAT_BASE64 | base64 --decode > .env.uat
           echo "Environment: uat"
 
       - name: Set Android SDK
@@ -209,7 +209,7 @@ workflows:
 
       - name: Set up environment file
         script: |
-          echo  | base64 --decode > .env
+          echo `$ENV_PROD_BASE64 | base64 --decode > .env.production
           echo "Environment: production"
 
       - name: Set Android SDK
@@ -285,7 +285,7 @@ workflows:
 
       - name: Set up environment file
         script: |
-          echo  | base64 --decode > .env
+          echo `$ENV_DEV_BASE64 | base64 --decode > .env.dev
 
       - name: Install CocoaPods
         script: |
@@ -372,7 +372,7 @@ workflows:
 
       - name: Set up environment file
         script: |
-          echo  | base64 --decode > .env
+          echo `$ENV_UAT_BASE64 | base64 --decode > .env.uat
 
       - name: Install CocoaPods
         script: |
@@ -459,7 +459,7 @@ workflows:
 
       - name: Set up environment file
         script: |
-          echo  | base64 --decode > .env
+          echo `$ENV_PROD_BASE64 | base64 --decode > .env.production
 
       - name: Install CocoaPods
         script: |
@@ -504,4 +504,7 @@ workflows:
         notify:
           success: true
           failure: true
+
+
+
 
