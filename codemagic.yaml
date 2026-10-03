@@ -11,13 +11,6 @@ definitions:
     node: 22.11.0
     npm: latest
     java: 17
-    android_signing:
-      - &android_keystore_dev
-        keystore_reference: keystore_dev
-      - &android_keystore_uat
-        keystore_reference: keystore_uat
-      - &android_keystore_prod
-        keystore_reference: keystore_prod
 
   # ── Reusable scripts ───────────────────────────────────
   scripts:
