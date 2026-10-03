@@ -90,7 +90,8 @@ android {
         applicationId "com.sampleapp"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode (System.getenv("BUILD_NUMBER") ?: 1).toInteger()
+        def buildNumber = System.getenv("BUILD_NUMBER")
+        versionCode (buildNumber ? buildNumber.toInteger() : 1)
         versionName "1.0"
     }
 
