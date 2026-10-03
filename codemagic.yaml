@@ -57,7 +57,7 @@ workflows:
         - android_signing_dev   # Keystore credentials
       vars:
         ENVFILE: .env.dev
-        FIREBASE_APP_ID_ANDROID: "1:858015635135:android:ef07a06bee88ba0c7ad80a"
+        FIREBASE_APP_ID_ANDROID: "1:858015635135:android:2492349efb968ba27ad80a"
         BUILD_FLAVOR: dev
         APP_ENV: dev
 
@@ -93,7 +93,7 @@ workflows:
       firebase:
         firebase_service_account: $FIREBASE_SERVICE_ACCOUNT_JSON
         android:
-          app_id: "1:858015635135:android:ef07a06bee88ba0c7ad80a"
+          app_id: "1:858015635135:android:2492349efb968ba27ad80a"
           groups:
             - dev-testers
           artifact_type: apk
@@ -128,7 +128,7 @@ workflows:
         - android_signing_uat
       vars:
         ENVFILE: .env.uat
-        FIREBASE_APP_ID_ANDROID: "1:858015635135:android:ef07a06bee88ba0c7ad80a"
+        FIREBASE_APP_ID_ANDROID: "1:858015635135:android:e1f30e77290c2ef07ad80a"
         BUILD_FLAVOR: uat
         APP_ENV: uat
 
@@ -163,7 +163,7 @@ workflows:
       firebase:
         firebase_service_account: $FIREBASE_SERVICE_ACCOUNT_JSON
         android:
-          app_id: "1:858015635135:android:ef07a06bee88ba0c7ad80a"
+          app_id: "1:858015635135:android:e1f30e77290c2ef07ad80a"
           groups:
             - uat-testers
           artifact_type: apk
@@ -504,3 +504,4 @@ workflows:
         notify:
           success: true
           failure: true
+
